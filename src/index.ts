@@ -37,12 +37,12 @@ while j.n ≠ φ or j.v < h.v do
 end while
 */
 
-type ListNode = { n: ListNode | null; v: number };
+type ListNode<T> = { n: ListNode<T> | null; v: number, r: T };
 
-function visit<T>(h: ListNode, remap: T[], l: number, p: T[]) {
+function visit<T>(h: ListNode<T>, l: number, p: T[]) {
   for (let i = l - 1; i >= 0; i--) {
-    p[i] = remap[h.v];
-    h = h.n as ListNode;
+    p[i] = h.r;
+    h = h.n as ListNode<T>;
   }
   return p;
 }
@@ -62,33 +62,33 @@ function * mp_gen<T>(p: number[], remap: T[], cycle: boolean) {
   const pv = p.map(i => remap[i]);
 
   // Init
-  let h: ListNode = { v: p[0], n: null };
-  let i: ListNode = h; // penultimate node
-  let j: ListNode = h; // final node
-  if (l > 1) h = i = { v: p[1], n: h };
+  let h: ListNode<T> = { v: p[0], r: remap[p[0]], n: null };
+  let i: ListNode<T> = h; // penultimate node
+  let j: ListNode<T> = h; // final node
+  if (l > 1) h = i = { v: p[1], r: remap[p[1]], n: h };
   for (let k = 2; k < l; ++k) {
-    h = { v: p[k], n: h };
+    h = { v: p[k], r: remap[p[k]], n: h };
   }
 
   for(;;) {
 
     // Visit permutations of the list
-    yield visit(h, remap, l, pv);
-    let s: ListNode;
+    yield visit(h, l, pv);
+    let s: ListNode<T>;
     for (;;) {
       if (j.n) s = i.v >= j.n.v ? j : i;
       else if (j.v >= h.v) break;
       else s = i;
 
-      const t = s.n as ListNode;
+      const t = s.n as ListNode<T>;
       s.n = t.n;
       t.n = h;
       if (t.v < h.v) {
         i = t;
       }
-      j = i.n as ListNode;
+      j = i.n as ListNode<T>;
       h = t;
-      yield visit(h, remap, l, pv);
+      yield visit(h, l, pv);
     }
 
     if (cycle) {
@@ -101,10 +101,12 @@ function * mp_gen<T>(p: number[], remap: T[], cycle: boolean) {
 
       for (let k = l - 1; k > 0; k--) {
         j.v = p[k];
+        j.r = remap[j.v];
         i = j;
-        j = j.n as ListNode;
+        j = j.n as ListNode<T>;
       }
       j.v = p[0];
+      j.r = remap[j.v];
     } else return;
   }
 }
